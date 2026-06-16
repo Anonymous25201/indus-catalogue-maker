@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catalogue Maker</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel for in-browser JSX compilation -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@700&family=Cinzel:wght@700&family=Montserrat:wght@800&family=Oswald:wght@700&family=Playfair+Display:ital,wght@1,700&display=swap');
+    
+    @media print {
+      body { background-color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
+      @page { size: A4 portrait; margin: 0mm; }
+    }
+
+    /* Basic animation classes fallback */
+    .animate-in { animation-duration: 0.3s; animation-fill-mode: both; }
+    .fade-in { animation-name: fadeIn; }
+    .slide-in-from-bottom-4 { animation-name: slideInBottom; }
+    .slide-in-from-top-2 { animation-name: slideInTop; }
+    .slide-in-from-top-4 { animation-name: slideInTop4; }
+    
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideInBottom { from { transform: translateY(1rem); } to { transform: translateY(0); } }
+    @keyframes slideInTop { from { transform: translateY(-0.5rem); } to { transform: translateY(0); } }
+    @keyframes slideInTop4 { from { transform: translateY(-1rem); } to { transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useRef, useEffect } = React;
+
+    // --- ICON COMPONENTS ---
+    const IconWrapper = ({ size = 24, className = "", children }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        {children}
+      </svg>
+    );
+
+    const Upload = (props) => <IconWrapper {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></IconWrapper>;
+    const ArrowLeft = (props) => <IconWrapper {...props}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></IconWrapper>;
+    const ImageIcon = (props) => <IconWrapper {...props}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></IconWrapper>;
+    const X = (props) => <IconWrapper {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></IconWrapper>;
+    const FileText = (props) => <IconWrapper {...props}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></IconWrapper>;
+    const Download = (props) => <IconWrapper {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></IconWrapper>;
+    const Layout = (props) => <IconWrapper {...props}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="21" y2="9"/></IconWrapper>;
+    const LayoutPanelLeft = (props) => <IconWrapper {...props}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="9" x2="9" y1="3" y2="21"/><line x1="9" x2="21" y1="11" y2="11"/></IconWrapper>;
+    const Loader2 = (props) => <IconWrapper {...props}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></IconWrapper>;
+    const Move = (props) => <IconWrapper {...props}><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/></IconWrapper>;
+    const Type = (props) => <IconWrapper {...props}><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></IconWrapper>;
+    const Palette = (props) => <IconWrapper {...props}><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></IconWrapper>;
+    const PlusCircle = (props) => <IconWrapper {...props}><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></IconWrapper>;
+
+
+    // --- CONSTANTS ---
+    const DEMOGRAPHICS = ["Men", "Women", "Kids", "Unisex"];
+    const PRODUCT_TYPES = [
+      "PU", "Hawai", "Fabrication", "PVC", 
+      "School Shoes", "Sports Shoes", "Sliders", "Clogs", 
+      "Sandals", "Formal Shoes"
+    ];
+
+    const SIZE_PRESETS = {
+      "Men": "6x10",
+      "Women": "4x8",
+      "Kids": "11x3",
+      "Unisex": "5x10"
+    };
+
+    const THEMES = {
+      street: {
+        id: 'street', name: 'Street Casual', bgClass: 'from-[#2dbcb4] to-[#1e9b94]',
+        pattern: 'radial-gradient(circle at center, #ffffff 2px, transparent 2px)', patternSize: '24px 24px',
+        watermarks: ['Street Fun', 'On Trend', 'All Day'], watermarkClass: 'text-[#1a7a74]',
+        badgeText: 'SOFT', badgeClass: 'bg-[#1a7a74] text-white border-white', footerClass: 'bg-teal-900 border-white',
+        inputClass: 'text-white placeholder-white/50', labelClass: 'text-white/80',
+        bulkHeader: 'border-teal-900', bulkLogoBg: 'bg-teal-700 border-teal-900 text-white',
+        bulkText: 'text-teal-600', bulkTitle: 'text-gray-900'
+      },
+      elegant: {
+        id: 'elegant', name: 'Classic Elegance', bgClass: 'from-[#f3ebe6] to-[#e4d4cc]',
+        pattern: 'linear-gradient(45deg, rgba(255,255,255,0.4) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.4) 75%, transparent 75%, transparent)',
+        patternSize: '40px 40px', watermarks: ['Elegant', 'Graceful', 'Chic'], watermarkClass: 'text-[#d4baaf]',
+        badgeText: 'PREMIUM', badgeClass: 'bg-[#8c6b5d] text-white border-white', footerClass: 'bg-[#4a3b32] border-[#d4baaf]',
+        inputClass: 'text-[#4a3b32] placeholder-[#4a3b32]/50', labelClass: 'text-[#8c6b5d]',
+        bulkHeader: 'border-[#8c6b5d]', bulkLogoBg: 'bg-[#8c6b5d] border-[#4a3b32] text-white',
+        bulkText: 'text-[#8c6b5d]', bulkTitle: 'text-[#4a3b32]'
+      },
+      sports: {
+        id: 'sports', name: 'Dynamic Sports', bgClass: 'from-gray-900 to-black',
+        pattern: 'radial-gradient(circle at center, #333 1px, transparent 1px)', patternSize: '16px 16px',
+        watermarks: ['Performance', 'Power', 'Speed'], watermarkClass: 'text-gray-800',
+        badgeText: 'ACTIVE', badgeClass: 'bg-red-600 text-white border-gray-900', footerClass: 'bg-black border-red-600',
+        inputClass: 'text-white placeholder-white/50', labelClass: 'text-red-500',
+        bulkHeader: 'border-red-600', bulkLogoBg: 'bg-red-600 border-gray-900 text-white',
+        bulkText: 'text-red-500', bulkTitle: 'text-gray-900'
+      },
+      kids: {
+        id: 'kids', name: 'Playful Kids', bgClass: 'from-[#ffcf54] to-[#ff9a44]',
+        pattern: 'radial-gradient(circle at center, rgba(255,255,255,0.3) 10px, transparent 10px)', patternSize: '40px 40px',
+        watermarks: ['Super Fun', 'Play Time', 'Jump!'], watermarkClass: 'text-[#e67e22]',
+        badgeText: 'FUN!', badgeClass: 'bg-[#3498db] text-white border-white', footerClass: 'bg-[#2c3e50] border-[#3498db]',
+        inputClass: 'text-[#2c3e50] placeholder-[#2c3e50]/50', labelClass: 'text-white',
+        bulkHeader: 'border-[#3498db]', bulkLogoBg: 'bg-[#f39c12] border-[#e67e22] text-white',
+        bulkText: 'text-[#3498db]', bulkTitle: 'text-[#2c3e50]'
+      }
+    };
+
+    // --- SUB-COMPONENTS ---
+    const IndusLogo = ({ theme = THEMES.street }) => (
+      <div className="flex items-center gap-2 bg-white/95 backdrop-blur-sm p-3 rounded-2xl shadow-sm border border-white/50">
+        <img src="image_58a43d.png" alt="Indus Logo" className="h-16 w-auto object-contain" />
+      </div>
+    );
+
+    const SinglePoster = ({ product, updateProduct, config }) => {
+      if (!product) return null;
+      const t = THEMES[config.themeId] || THEMES.street;
+      const bgStyle = config.useCustomBg ? { backgroundImage: `linear-gradient(to bottom right, ${config.bgStart}, ${config.bgEnd})` } : {};
+      const bgClass = config.useCustomBg ? '' : t.bgClass;
+      
+      return (
+        <div id="printable-area" className={`relative w-[794px] h-[1123px] mx-auto bg-gradient-to-br ${bgClass} overflow-hidden shadow-2xl print:shadow-none print:w-full print:h-screen ${config.fontFamily}`} style={bgStyle}>
+          <div className="absolute inset-0 z-0 pointer-events-none opacity-20" style={{ backgroundImage: t.pattern, backgroundSize: t.patternSize }}></div>
+
+          <div className={`absolute top-[3%] left-[4%] ${t.watermarkClass} font-serif italic text-7xl opacity-40 select-none tracking-tighter`}>{t.watermarks[0]}</div>
+          <div className={`absolute top-[18%] right-[8%] ${t.watermarkClass} font-serif italic text-8xl opacity-30 select-none tracking-tighter`}>{t.watermarks[1]}</div>
+          <div className={`absolute bottom-[25%] left-[-5%] ${t.watermarkClass} font-serif italic text-[10rem] opacity-20 select-none tracking-tighter -rotate-90 origin-bottom-left`}>{t.watermarks[2]}</div>
+
+          <div className="absolute top-10 right-10 z-40 flex flex-col items-end">
+            <span className={`${t.labelClass} italic font-medium text-lg tracking-wide mb-1`}>Art Number</span>
+            <input 
+              value={product.article} 
+              onChange={(e) => updateProduct(product.id, 'article', e.target.value)}
+              className={`font-black tracking-tighter bg-transparent text-right w-[400px] outline-none leading-none uppercase drop-shadow-md pointer-events-auto ${t.inputClass}`}
+              style={{ fontSize: `${(product.textStyle?.articleSize ?? 4.5) * 16}px` }}
+              placeholder="ARTICLE"
+            />
+          </div>
+
+          <div className="absolute right-[-450px] top-[40%] transform -rotate-90 origin-top-left z-40 w-[1000px] text-center">
+            <span className={`${t.labelClass} opacity-80 text-sm font-semibold tracking-widest`}>*MRP. is subject to change without any prior intimation. *MRP. mentioned is per pair.</span>
+          </div>
+
+          <div className="absolute top-[15%] left-[0%] w-[100%] h-[60%] flex items-center justify-center z-30 pointer-events-none">
+             <div
+                className="relative pointer-events-none flex items-center justify-center w-[90%] h-[100%]"
+                style={{
+                  transform: `translate(${product.transform?.x ?? 0}%, ${product.transform?.y ?? 0}%) rotate(${product.transform?.rotate ?? 0}deg) scale(${product.transform?.scale ?? 1.4})`,
+                  transformOrigin: 'center center'
+                }}
+             >
+               <img 
+                  src={product.images[0]?.url || ''} 
+                  className="block drop-shadow-[0_45px_45px_rgba(0,0,0,0.6)] pointer-events-none" 
+                  style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto' }}
+                  alt="Product" 
+               />
+             </div>
+          </div>
+
+          <div className="absolute bottom-[180px] left-12 z-40 flex flex-col gap-1 w-[400px]">
+            <input 
+              value={product.images[0]?.color || ''} 
+              onChange={(e) => {
+                const newImages = [...product.images];
+                newImages[0].color = e.target.value;
+                updateProduct(product.id, 'images', newImages);
+              }}
+              className={`bg-transparent text-left font-semibold outline-none uppercase drop-shadow-sm ${t.inputClass}`}
+              style={{ fontSize: `${(product.textStyle?.detailsSize ?? 2) * 16}px` }}
+              placeholder="COLOR"
+            />
+            <input 
+              value={product.size} 
+              onChange={(e) => updateProduct(product.id, 'size', e.target.value)}
+              className={`bg-transparent text-left font-medium outline-none uppercase drop-shadow-sm ${t.inputClass}`}
+              style={{ fontSize: `${(product.textStyle?.detailsSize ?? 2) * 14}px` }}
+              placeholder="SIZE"
+            />
+          </div>
+
+          <div className="absolute bottom-[200px] right-20 z-40">
+            <div className={`${t.badgeClass} px-6 py-2 rounded-2xl shadow-xl transform border-[3px]`}>
+              <span className="text-3xl font-black tracking-widest drop-shadow-md">{t.badgeText}</span>
+            </div>
+          </div>
+
+          <div className={`absolute bottom-0 w-full h-[140px] z-50 flex items-center justify-center border-t-[6px] shadow-[0_-10px_30px_rgba(0,0,0,0.3)] ${t.footerClass}`}>
+            <div className="bg-white/95 p-3 rounded-2xl shadow-xl border border-white/50">
+               <img src="image_58a43d.png" alt="Indus Logo" className="h-[75px] w-auto max-w-[500px] object-contain drop-shadow-sm" />
+            </div>
+          </div>
+
+        </div>
+      );
+    };
+
+    // --- MAIN APP COMPONENT ---
+    function App() {
+      const [mode, setMode] = useState('bulk');
+      const [step, setStep] = useState(1);
+      
+      const [demographic, setDemographic] = useState('Men');
+      const [productType, setProductType] = useState('PU');
+      const [isCustomCategory, setIsCustomCategory] = useState(false);
+      const [customCategory, setCustomCategory] = useState('');
+      const [category, setCategory] = useState('');
+      const [defaultSize, setDefaultSize] = useState(SIZE_PRESETS['Men'] || '6x10');
+      
+      const [products, setProducts] = useState([]);
+      const [isDragging, setIsDragging] = useState(false);
+      const [isProcessing, setIsProcessing] = useState(false);
+      const [showPrintHint, setShowPrintHint] = useState(false);
+      const [posterScale, setPosterScale] = useState(1);
+      
+      const [config, setConfig] = useState({
+          themeId: 'street',
+          useCustomBg: false,
+          bgStart: '#2dbcb4',
+          bgEnd: '#1e9b94',
+          fontFamily: 'font-sans'
+      });
+      const [activeSlot, setActiveSlot] = useState(null);
+
+      const fileInputRef = useRef(null);
+      const containerRef = useRef(null);
+      const slotFileInputRef = useRef(null);
+
+      const handleNextStep1 = () => {
+        if (mode === 'single') {
+          setStep(2);
+          return;
+        }
+        
+        const finalCategory = isCustomCategory 
+          ? customCategory 
+          : `${demographic} ${productType}`;
+
+        if (finalCategory.trim()) {
+          setCategory(finalCategory);
+          
+          const lowerCat = finalCategory.toLowerCase();
+          let newTheme = 'street';
+          if (lowerCat.includes('sports') || lowerCat.includes('athletic')) newTheme = 'sports';
+          else if (lowerCat.includes('women') || lowerCat.includes('ladies') || lowerCat.includes('formal')) newTheme = 'elegant';
+          else if (lowerCat.includes('kids') || lowerCat.includes('child') || lowerCat.includes('school')) newTheme = 'kids';
+          
+          setConfig(prev => ({ ...prev, themeId: newTheme }));
+          setStep(2);
+        }
+      };
+
+      const parseFilename = (filename) => {
+        let nameWithoutExt = filename.substring(0, filename.lastIndexOf('.')) || filename;
+        const parts = nameWithoutExt.split(/[-_]/);
+        if (parts.length > 1) {
+          let lastPart = parts[parts.length - 1].trim();
+          if (!/\d/.test(lastPart)) {
+             return { article: parts.slice(0, -1).join('-').trim(), color: lastPart, size: defaultSize };
+          }
+        }
+        const spaceParts = nameWithoutExt.split(' ');
+        if (spaceParts.length > 1) {
+           let lastPart = spaceParts[spaceParts.length - 1].trim();
+           if (!/\d/.test(lastPart)) {
+             return { article: spaceParts.slice(0, -1).join(' ').trim(), color: lastPart, size: defaultSize };
+           }
+        }
+        return { article: nameWithoutExt.trim(), color: '', size: defaultSize };
+      };
+
+      const removeWhiteBG = (file) => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          const originalUrl = URL.createObjectURL(file);
+          
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const w = img.width; const h = img.height;
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(img, 0, 0);
+            
+            const imageData = ctx.getImageData(0, 0, w, h);
+            const data = imageData.data;
+            
+            const isBgColor = (r, g, b) => r > 150 && g > 150 && b > 150 && (Math.max(r,g,b) - Math.min(r,g,b) < 30);
+            const isPureWhite = (r, g, b) => r > 240 && g > 240 && b > 240;
+            
+            const isBgMask = new Uint8Array(w * h);
+            const stack = [];
+            
+            for (let x = 0; x < w; x++) {
+               if (isBgColor(data[(x) * 4], data[(x) * 4 + 1], data[(x) * 4 + 2])) stack.push(x, 0);
+               if (isBgColor(data[(x + (h - 1) * w) * 4], data[(x + (h - 1) * w) * 4 + 1], data[(x + (h - 1) * w) * 4 + 2])) stack.push(x, h - 1);
+            }
+            for (let y = 0; y < h; y++) {
+               if (isBgColor(data[(y * w) * 4], data[(y * w) * 4 + 1], data[(y * w) * 4 + 2])) stack.push(0, y);
+               if (isBgColor(data[((w - 1) + y * w) * 4], data[((w - 1) + y * w) * 4 + 1], data[((w - 1) + y * w) * 4 + 2])) stack.push(w - 1, y);
+            }
+
+            while (stack.length > 0) {
+              const py = stack.pop();
+              const px = stack.pop();
+              const pIdx = py * w + px;
+              
+              if (isBgMask[pIdx]) continue; 
+              isBgMask[pIdx] = 1; 
+              
+              const checkAndPush = (nx, ny) => {
+                  const nIdx = ny * w + nx;
+                  if (!isBgMask[nIdx]) {
+                      const i = nIdx * 4;
+                      if (isBgColor(data[i], data[i+1], data[i+2])) {
+                          stack.push(nx, ny);
+                      }
+                  }
+              };
+
+              if (px > 0) checkAndPush(px - 1, py);
+              if (px < w - 1) checkAndPush(px + 1, py);
+              if (py > 0) checkAndPush(px, py - 1);
+              if (py < h - 1) checkAndPush(px, py + 1);
+            }
+
+            const finalMask = new Uint8Array(w * h);
+            const EROSION = 2; 
+
+            for (let y = 0; y < h; y++) {
+              for (let x = 0; x < w; x++) {
+                 const pIdx = y * w + x;
+                 const i = pIdx * 4;
+
+                 if (isPureWhite(data[i], data[i+1], data[i+2])) {
+                     finalMask[pIdx] = 1;
+                     continue;
+                 }
+
+                 if (isBgMask[pIdx]) {
+                     finalMask[pIdx] = 1; 
+                 } else {
+                     let nearBg = 0;
+                     for (let dy = -EROSION; dy <= EROSION; dy++) {
+                         for (let dx = -EROSION; dx <= EROSION; dx++) {
+                             if (dx === 0 && dy === 0) continue;
+                             const nx = x + dx;
+                             const ny = y + dy;
+                             if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+                                 if (isBgMask[ny * w + nx]) nearBg++;
+                             }
+                         }
+                     }
+                     if (nearBg > 6) {
+                         finalMask[pIdx] = 1; 
+                     } else if (nearBg > 2) {
+                         finalMask[pIdx] = 2; 
+                     }
+                 }
+              }
+            }
+
+            for (let i = 0; i < w * h; i++) {
+               if (finalMask[i] === 1) {
+                   data[i * 4 + 3] = 0; 
+               } else if (finalMask[i] === 2) {
+                   data[i * 4 + 3] = Math.max(0, data[i * 4 + 3] - 160); 
+                   data[i * 4] = Math.max(0, data[i * 4] - 30);
+                   data[i * 4 + 1] = Math.max(0, data[i * 4 + 1] - 30);
+                   data[i * 4 + 2] = Math.max(0, data[i * 4 + 2] - 30);
+               }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+            resolve(canvas.toDataURL('image/png', 1.0));
+            URL.revokeObjectURL(originalUrl);
+          };
+          img.src = originalUrl;
+        });
+      };
+
+      const handleFiles = async (files) => {
+        setIsProcessing(true); 
+        const processed = await Promise.all(Array.from(files).map(async (file, index) => {
+          const parsed = parseFilename(file.name);
+          const url = await removeWhiteBG(file); 
+          return { id: Date.now() + index, file, url, ...parsed };
+        }));
+
+        if (mode === 'single') {
+            setProducts([{
+                id: Date.now(),
+                article: processed[0].article,
+                size: processed[0].size,
+                images: [{ url: processed[0].url, color: processed[0].color }],
+                transform: { rotate: 0, scale: 1.4, x: 0, y: 0 },
+                textStyle: { font: 'font-[Impact]', articleSize: 4.5, detailsSize: 2.2 } 
+            }]);
+        } else {
+            setProducts(prev => {
+                let newProducts = [...prev];
+                processed.forEach(item => {
+                    let articleIndex = newProducts.findIndex(p => p.article.toLowerCase() === item.article.toLowerCase());
+                    if (articleIndex === -1) {
+                        const newArticle = {
+                            id: Date.now() + Math.random(),
+                            article: item.article,
+                            size: item.size || defaultSize,
+                            images: Array(6).fill(null).map(() => ({ url: '', color: '' }))
+                        };
+                        newArticle.images[0] = { url: item.url, color: item.color };
+                        newProducts.push(newArticle);
+                    } else {
+                        let article = newProducts[articleIndex];
+                        let emptySlot = article.images.findIndex(img => !img.url);
+                        if (emptySlot !== -1) {
+                            article.images[emptySlot] = { url: item.url, color: item.color };
+                        }
+                    }
+                });
+                return newProducts;
+            });
+        }
+        setIsProcessing(false); 
+      };
+
+      const handleSlotFileChange = async (e) => {
+          if (!e.target.files || e.target.files.length === 0 || !activeSlot) return;
+          setIsProcessing(true);
+          const file = e.target.files[0];
+          const parsed = parseFilename(file.name);
+          const url = await removeWhiteBG(file);
+
+          setProducts(prev => prev.map(p => {
+              if (p.id === activeSlot.articleId) {
+                  const newImages = [...p.images];
+                  newImages[activeSlot.index] = { 
+                      url: url, 
+                      color: parsed.color || newImages[activeSlot.index].color 
+                  };
+                  return { ...p, images: newImages };
+              }
+              return p;
+          }));
+          
+          e.target.value = ''; 
+          setActiveSlot(null);
+          setIsProcessing(false);
+      };
+
+      const triggerSlotUpload = (articleId, index) => {
+          setActiveSlot({ articleId, index });
+          if (slotFileInputRef.current) slotFileInputRef.current.click();
+      };
+
+      const addBlankArticle = () => {
+          setProducts(prev => [...prev, {
+              id: Date.now(),
+              article: '',
+              size: defaultSize,
+              images: Array(6).fill(null).map(() => ({ url: '', color: '' }))
+          }]);
+          if (step === 2) setStep(3); 
+      };
+
+      const updateProduct = (id, field, value) => {
+        setProducts(products.map(p => p.id === id ? { ...p, [field]: value } : p));
+      };
+      const updateTransform = (id, field, value) => {
+        setProducts(products.map(p => p.id === id ? { ...p, transform: { ...p.transform, [field]: Number(value) } } : p));
+      };
+      const updateTextStyle = (id, field, value) => {
+        setProducts(products.map(p => p.id === id ? { ...p, textStyle: { ...(p.textStyle || { font: 'font-sans', articleSize: 4.5, detailsSize: 2 }), [field]: value } } : p));
+      };
+
+      useEffect(() => {
+        if (mode !== 'single' || step !== 3) return;
+        const updateScale = () => {
+          if (containerRef.current) {
+            const width = containerRef.current.offsetWidth;
+            setPosterScale(Math.min(1, (width - 32) / 794));
+          }
+        };
+        updateScale();
+        window.addEventListener('resize', updateScale);
+        return () => window.removeEventListener('resize', updateScale);
+      }, [mode, step, products]);
+
+      const handlePrint = async () => {
+        setShowPrintHint(true);
+        setIsProcessing(true);
+        await new Promise(resolve => setTimeout(resolve, 150));
+
+        try {
+          if (!window.html2canvas) {
+            await new Promise((resolve) => {
+              const script = document.createElement('script');
+              script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+              script.onload = resolve; document.head.appendChild(script);
+            });
+          }
+          if (!window.jspdf) {
+            await new Promise((resolve) => {
+              const script = document.createElement('script');
+              script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+              script.onload = resolve; document.head.appendChild(script);
+            });
+          }
+
+          const printElement = document.getElementById('printable-area');
+          if (!printElement) throw new Error("Print element not found in DOM");
+          
+          const originalStyle = printElement.style.cssText;
+          const originalClass = printElement.className;
+          
+          if (mode === 'single') {
+             printElement.className = originalClass.replace(/scale-\[.*?\]/g, '').replace(/md:scale-\d+/g, '').replace(/origin-top/g, '');
+             printElement.style.cssText = "position: fixed !important; top: 0 !important; left: 0 !important; z-index: 9999 !important; transform: scale(1) !important; margin: 0 !important;";
+          }
+
+          await new Promise(resolve => setTimeout(resolve, 50)); 
+
+          const canvas = await window.html2canvas(printElement, {
+            scale: 2, useCORS: true,
+            backgroundColor: mode === 'single' ? '#0f172a' : '#ffffff',
+            onclone: (clonedDoc) => {
+               const clonedPrintArea = clonedDoc.getElementById('printable-area');
+               if (clonedPrintArea) {
+                   const inputs = clonedPrintArea.querySelectorAll('input');
+                   inputs.forEach(input => {
+                       const div = clonedDoc.createElement('div');
+                       div.textContent = input.value || input.placeholder;
+                       div.className = input.className;
+                       div.style.cssText = input.style.cssText;
+                       div.style.whiteSpace = 'nowrap'; div.style.overflow = 'visible'; div.style.lineHeight = '1.2'; div.style.paddingBottom = '10px';
+                       input.parentNode.replaceChild(div, input);
+                   });
+               }
+            }
+          });
+
+          if (mode === 'single') {
+             printElement.className = originalClass; printElement.style.cssText = originalStyle;
+          }
+
+          const imgData = canvas.toDataURL('image/jpeg', 0.95);
+          const pdf = new window.jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+          pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+          
+          const fileName = mode === 'single' && products.length > 0 ? `INDUS_${products[0].article || 'Catalogue'}.pdf` : `INDUS_Catalogue.pdf`;
+          pdf.save(fileName);
+
+        } catch (e) {
+          console.error("PDF Generation failed", e);
+          window.focus();
+          try { window.print(); } catch(err) {}
+        } finally {
+          setIsProcessing(false); setShowPrintHint(false);
+        }
+      };
+
+      return (
+        <div className="min-h-screen bg-gray-50 print:bg-white text-gray-800 font-sans">
+          
+          <input type="file" accept="image/*" className="hidden" ref={slotFileInputRef} onChange={handleSlotFileChange} />
+
+          <nav className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center print:hidden sticky top-0 z-30">
+            <div className="flex items-center gap-2">
+              <FileText className="text-teal-600" size={24} />
+              <h1 className="text-xl font-bold text-gray-800">Catalogue Maker</h1>
+            </div>
+            
+            <div className="flex items-center gap-4 text-sm font-medium hidden md:flex">
+              <div className={`flex items-center gap-2 ${step >= 1 ? 'text-teal-600' : 'text-gray-400'}`}><div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 1 ? 'bg-teal-100' : 'bg-gray-100'}`}>1</div>Format</div>
+              <div className="w-8 h-px bg-gray-300"></div>
+              <div className={`flex items-center gap-2 ${step >= 2 ? 'text-teal-600' : 'text-gray-400'}`}><div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 2 ? 'bg-teal-100' : 'bg-gray-100'}`}>2</div>Upload</div>
+              <div className="w-8 h-px bg-gray-300"></div>
+              <div className={`flex items-center gap-2 ${step >= 3 ? 'text-teal-600' : 'text-gray-400'}`}><div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 3 ? 'bg-teal-100' : 'bg-gray-100'}`}>3</div>Preview</div>
+            </div>
+          </nav>
+
+          <main className="max-w-6xl mx-auto p-6 print:p-0">
+            
+            {step === 1 && (
+              <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border p-8 mt-10">
+                <h2 className="text-2xl font-bold mb-6 text-gray-800">1. Choose Catalogue Format</h2>
+                <div className="grid md:grid-cols-2 gap-6 mb-10">
+                  <div onClick={() => setMode('bulk')} className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${mode === 'bulk' ? 'border-teal-500 bg-teal-50' : 'border-gray-200 hover:border-teal-300'}`}>
+                    <Layout className={`mb-4 w-10 h-10 ${mode === 'bulk' ? 'text-teal-600' : 'text-gray-400'}`} />
+                    <h3 className="text-lg font-bold text-gray-800 mb-2">Bulk Template Builder</h3>
+                    <p className="text-sm text-gray-500">Create beautiful templates showing articles with 6 color slots each. Click slots to upload specific colors.</p>
+                  </div>
+                  <div onClick={() => setMode('single')} className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${mode === 'single' ? 'border-teal-500 bg-teal-50' : 'border-gray-200 hover:border-teal-300'}`}>
+                    <LayoutPanelLeft className={`mb-4 w-10 h-10 ${mode === 'single' ? 'text-teal-600' : 'text-gray-400'}`} />
+                    <h3 className="text-lg font-bold text-gray-800 mb-2">Single Article Poster</h3>
+                    <p className="text-sm text-gray-500">Create a high-impact, full-page poster for a single article with detailed layout.</p>
+                  </div>
+                </div>
+
+                {mode === 'bulk' && (
+                  <div className="animate-in fade-in slide-in-from-bottom-4">
+                    <div className="border-t pt-6 mb-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold text-gray-800">2. Catalogue Details</h2>
+                        <button onClick={() => setIsCustomCategory(!isCustomCategory)} className="text-sm text-teal-600 font-medium hover:text-teal-700 bg-teal-50 px-3 py-1.5 rounded-lg">
+                          {isCustomCategory ? "Use Preset Categories" : "Create Custom Category"}
+                        </button>
+                      </div>
+
+                      {!isCustomCategory ? (
+                        <div className="space-y-6">
+                          <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Target Group (Demographic)</label>
+                            <div className="flex flex-wrap gap-2">
+                              {DEMOGRAPHICS.map(demo => (
+                                <button key={demo} onClick={() => { setDemographic(demo); setDefaultSize(SIZE_PRESETS[demo] || '6x10'); }} className={`px-4 py-2 rounded-xl border-2 text-sm transition-all ${ demographic === demo ? 'border-teal-600 bg-teal-50 text-teal-800 font-bold shadow-sm' : 'border-gray-200 hover:border-teal-300 hover:bg-gray-50 font-medium text-gray-600' }`}>
+                                  {demo}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Product Type</label>
+                            <div className="flex flex-wrap gap-2">
+                              {PRODUCT_TYPES.map(type => (
+                                <button key={type} onClick={() => setProductType(type)} className={`px-4 py-2 rounded-xl border-2 text-sm transition-all ${ productType === type ? 'border-teal-600 bg-teal-50 text-teal-800 font-bold shadow-sm' : 'border-gray-200 hover:border-teal-300 hover:bg-gray-50 font-medium text-gray-600' }`}>
+                                  {type}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mb-6 animate-in fade-in slide-in-from-top-2">
+                          <label className="block text-sm font-bold text-gray-700 mb-2">Custom Category Name</label>
+                          <input type="text" placeholder="e.g. Winter Boots Collection" value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all font-medium text-gray-800" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="animate-in fade-in slide-in-from-bottom-4 mt-6 p-5 bg-gray-50 rounded-2xl border border-gray-200">
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Default Size Range (For Uploads)</label>
+                  <p className="text-xs text-gray-500 mb-3">This size automatically applies to all images you upload next (you can still edit them individually).</p>
+                  <input type="text" value={defaultSize} onChange={(e) => setDefaultSize(e.target.value)} placeholder="e.g. 6x10, 4x8, 11x3" className="w-full sm:w-64 p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all font-bold text-gray-800 uppercase" />
+                </div>
+
+                <div className="flex justify-end mt-8 border-t pt-6">
+                  <button onClick={handleNextStep1} disabled={mode === 'bulk' && (isCustomCategory && !customCategory)} className="bg-teal-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    Continue to Build
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="mt-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <button onClick={() => setStep(1)} className="p-2 hover:bg-gray-200 rounded-full transition-colors"><ArrowLeft size={20} /></button>
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    Data Upload {mode === 'bulk' && <span className="text-teal-600">: {category}</span>}
+                  </h2>
+                </div>
+
+                <div className="grid lg:grid-cols-3 gap-8">
+                  <div className="lg:col-span-1">
+                    <div 
+                      className={`border-2 border-dashed rounded-2xl p-10 text-center flex flex-col items-center justify-center transition-all bg-white relative overflow-hidden ${isDragging ? 'border-teal-500 bg-teal-50' : 'border-gray-300 hover:border-gray-400'} ${isProcessing ? 'opacity-70 pointer-events-none' : ''}`}
+                      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                      onDragLeave={() => setIsDragging(false)}
+                      onDrop={(e) => { e.preventDefault(); setIsDragging(false); handleFiles(e.dataTransfer.files); }}
+                    >
+                      {isProcessing ? (
+                        <div className="flex flex-col items-center justify-center animate-in fade-in">
+                          <Loader2 size={40} className="text-teal-600 animate-spin mb-4" />
+                          <h3 className="text-lg font-bold text-teal-800 mb-1">Processing Images...</h3>
+                          <p className="text-sm text-teal-600">Removing backgrounds automatically</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="bg-teal-100 text-teal-600 p-4 rounded-full mb-4"><Upload size={32} /></div>
+                          <h3 className="text-lg font-semibold mb-2">Drag & Drop image{mode === 'single' ? '' : 's'}</h3>
+                          <p className="text-sm text-gray-500 mb-6">We will auto-group them by article name.<br/>Naming tip: "KGF-26-Black.jpg"</p>
+                          
+                          <input type="file" multiple={mode === 'bulk'} accept="image/*" className="hidden" ref={fileInputRef} onChange={(e) => handleFiles(e.target.files)} />
+                          <button onClick={() => fileInputRef.current?.click()} className="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors shadow-sm w-full mb-3">
+                            Browse Files
+                          </button>
+
+                          {mode === 'bulk' && (
+                            <>
+                              <div className="relative w-full my-4 flex items-center justify-center">
+                                <hr className="w-full border-gray-200" />
+                                <span className="absolute bg-white px-2 text-xs text-gray-400 font-bold uppercase">OR</span>
+                              </div>
+                              <button onClick={addBlankArticle} className="bg-teal-50 text-teal-700 border border-teal-200 px-6 py-2 rounded-lg font-bold hover:bg-teal-100 transition-colors shadow-sm w-full flex items-center justify-center gap-2">
+                                 <PlusCircle size={18} /> Add Blank Template
+                              </button>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {products.length > 0 && !isProcessing && (
+                      <div className="mt-6 bg-teal-50 p-6 rounded-2xl border border-teal-100">
+                        <h4 className="font-semibold text-teal-900 mb-2">Ready to edit template?</h4>
+                        <p className="text-sm text-teal-700 mb-4">{products.length} template{products.length > 1 ? 's' : ''} established.</p>
+                        <button onClick={() => setStep(3)} className="w-full bg-teal-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-teal-700 shadow-sm transition-all">
+                          Open Template Builder
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border p-6 min-h-[500px]">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="font-bold text-lg text-gray-800">Quick Preview</h3>
+                      <span className="text-sm bg-gray-100 px-3 py-1 rounded-full text-gray-600">{products.length} item{products.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    
+                    {products.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+                        <ImageIcon size={48} className="mb-4 opacity-50" />
+                        <p>No products established yet</p>
+                      </div>
+                    ) : (
+                      <div className={`grid gap-4 auto-rows-max h-[600px] overflow-y-auto pr-2 pb-4 grid-cols-1`}>
+                        {products.map((product) => (
+                          <div key={product.id} className="border rounded-xl p-4 relative group hover:shadow-md transition-all flex gap-6 items-center bg-gray-50/50">
+                            <button onClick={() => updateProduct(product.id, 'delete_flag', true)} className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600 shadow-sm" onClickCapture={(e)=>{ e.stopPropagation(); setProducts(prev => prev.filter(p => p.id !== product.id)) }}>
+                              <X size={14} />
+                            </button>
+                            
+                            <div className="flex-1">
+                                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Article No.</label>
+                                <input type="text" value={product.article} onChange={(e) => updateProduct(product.id, 'article', e.target.value)} className="w-full text-lg font-bold border-b border-gray-200 bg-transparent outline-none py-1" />
+                            </div>
+                            <div className="flex-1">
+                                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Size.</label>
+                                <input type="text" value={product.size} onChange={(e) => updateProduct(product.id, 'size', e.target.value)} className="w-full text-sm font-medium border-b border-gray-200 bg-transparent outline-none py-1" />
+                            </div>
+                            
+                            {mode === 'bulk' && (
+                                <div className="flex-1 flex gap-1">
+                                    {product.images.map((img, i) => (
+                                        <div key={i} className="w-8 h-8 rounded border border-gray-300 bg-white flex items-center justify-center overflow-hidden">
+                                            {img.url ? <img src={img.url} className="w-full h-full object-contain" /> : <div className="w-2 h-2 rounded-full bg-gray-200"></div>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="pb-20 print:pb-0 relative">
+                
+                {showPrintHint && (
+                  <div className="print:hidden fixed top-6 right-6 bg-teal-900 text-white px-5 py-4 rounded-xl shadow-2xl z-50 animate-in fade-in slide-in-from-top-4 flex flex-col gap-1 border border-teal-700">
+                    <div className="flex items-center gap-4"><Loader2 size={20} className="animate-spin text-teal-400" /><span className="font-bold text-teal-100">Generating PDF...</span></div>
+                    <p className="text-sm text-teal-200 mt-1 pl-9">Please wait while we render your high-resolution catalogue.</p>
+                  </div>
+                )}
+
+                <div className="print:hidden flex justify-between items-center bg-gray-900 text-white p-4 rounded-2xl mb-8 shadow-lg sticky top-4 z-30">
+                  <div className="flex items-center gap-4">
+                    <button onClick={() => setStep(2)} disabled={isProcessing} className="flex items-center gap-2 hover:bg-gray-800 p-2 rounded-lg transition-colors disabled:opacity-50"><ArrowLeft size={18} /> Edit Uploads</button>
+                    <div className="w-px h-6 bg-gray-700"></div>
+                    <span className="text-sm text-gray-300 hidden sm:block">
+                      {mode === 'single' ? 'Single Poster Mode: Adjust settings below.' : 'Template Builder: Click on image frames to upload photos.'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {mode === 'bulk' && (
+                        <button onClick={addBlankArticle} className="bg-gray-800 border border-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 shadow-sm transition-colors text-sm">
+                          <PlusCircle size={16} /> Add Article
+                        </button>
+                    )}
+                    <button onClick={handlePrint} disabled={isProcessing} className="bg-teal-500 hover:bg-teal-400 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                      {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+                      {isProcessing ? 'Processing...' : 'Download PDF'}
+                    </button>
+                  </div>
+                </div>
+
+                {products.length > 0 && (
+                  <div className="flex flex-col lg:flex-row gap-8 justify-center items-start">
+                    
+                    {/* UNIFIED SIDEBAR */}
+                    <div className="print:hidden w-full lg:w-72 bg-white p-6 rounded-2xl shadow-sm border sticky top-28 z-30 shrink-0">
+                       
+                       {mode === 'single' && (
+                         <>
+                           <h3 className="font-bold text-gray-800 mb-5 flex items-center gap-2"><Move size={18} className="text-teal-600"/> Adjust Image Position</h3>
+                           <div className="space-y-5">
+                              <div>
+                                <div className="flex justify-between mb-1"><label className="text-xs font-bold text-gray-500 uppercase">Rotation Tilt</label><span className="text-xs font-semibold text-teal-600">{products[0].transform?.rotate ?? 0}°</span></div>
+                                <input type="range" min="-180" max="180" value={products[0].transform?.rotate ?? 0} onChange={(e) => updateTransform(products[0].id, 'rotate', e.target.value)} className="w-full accent-teal-600" />
+                              </div>
+                              <div>
+                                <div className="flex justify-between mb-1"><label className="text-xs font-bold text-gray-500 uppercase">Zoom (Scale)</label><span className="text-xs font-semibold text-teal-600">{products[0].transform?.scale ?? 1.4}x</span></div>
+                                <input type="range" min="0.5" max="2.5" step="0.05" value={products[0].transform?.scale ?? 1.4} onChange={(e) => updateTransform(products[0].id, 'scale', e.target.value)} className="w-full accent-teal-600" />
+                              </div>
+                              <div>
+                                <div className="flex justify-between mb-1"><label className="text-xs font-bold text-gray-500 uppercase">Move Left/Right</label></div>
+                                <input type="range" min="-50" max="50" value={products[0].transform?.x ?? 0} onChange={(e) => updateTransform(products[0].id, 'x', e.target.value)} className="w-full accent-teal-600" />
+                              </div>
+                              <div>
+                                <div className="flex justify-between mb-1"><label className="text-xs font-bold text-gray-500 uppercase">Move Up/Down</label></div>
+                                <input type="range" min="-50" max="50" value={products[0].transform?.y ?? 0} onChange={(e) => updateTransform(products[0].id, 'y', e.target.value)} className="w-full accent-teal-600" />
+                              </div>
+                              <button onClick={() => { updateTransform(products[0].id, 'rotate', 0); updateTransform(products[0].id, 'scale', 1.4); updateTransform(products[0].id, 'x', 0); updateTransform(products[0].id, 'y', 0); }} className="w-full mt-4 py-2.5 text-sm text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-xl font-bold transition-colors">Reset Position</button>
+                           </div>
+                           <div className="border-t pt-5 mt-5"></div>
+                         </>
+                       )}
+
+                       <h3 className="font-bold text-gray-800 mb-5 flex items-center gap-2"><Palette size={18} className="text-teal-600"/> Background & Theme</h3>
+                       <div className="space-y-4 mb-6">
+                           <select value={config.themeId} onChange={(e) => setConfig({...config, themeId: e.target.value})} className="w-full p-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-teal-500 bg-white font-medium">
+                               {Object.values(THEMES).map(t => (<option key={t.id} value={t.id}>{t.name}</option>))}
+                           </select>
+
+                           <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                             <label className="flex items-center gap-2 text-sm font-bold text-gray-700 cursor-pointer mb-3">
+                                <input type="checkbox" checked={config.useCustomBg} onChange={e => setConfig({...config, useCustomBg: e.target.checked})} className="accent-teal-600 w-4 h-4" />
+                                Custom Colors
+                             </label>
+                             {config.useCustomBg && (
+                               <div className="flex gap-2 animate-in fade-in">
+                                  <div className="flex-1"><label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Start</label><input type="color" value={config.bgStart} onChange={e => setConfig({...config, bgStart: e.target.value})} className="w-full h-8 rounded cursor-pointer" /></div>
+                                  <div className="flex-1"><label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">End</label><input type="color" value={config.bgEnd} onChange={e => setConfig({...config, bgEnd: e.target.value})} className="w-full h-8 rounded cursor-pointer" /></div>
+                               </div>
+                             )}
+                           </div>
+                       </div>
+
+                       <h3 className="font-bold text-gray-800 mb-5 flex items-center gap-2 border-t pt-5"><Type size={18} className="text-teal-600"/> Adjust Text & Font</h3>
+                       <div className="space-y-5">
+                          <div>
+                            <div className="flex justify-between mb-1"><label className="text-xs font-bold text-gray-500 uppercase">Global Font</label></div>
+                            <select value={config.fontFamily} onChange={(e) => setConfig({...config, fontFamily: e.target.value})} className="w-full p-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-teal-500 bg-white">
+                                <optgroup label="Standard Fonts">
+                                  <option value="font-sans">Modern (Sans)</option><option value="font-serif">Classic (Serif)</option><option value="font-mono">Technical (Mono)</option><option value="font-[Impact]">Bold (Impact)</option>
+                                </optgroup>
+                                <optgroup label="Designer Fonts">
+                                  <option value="font-['Montserrat']">Clean Bold (Montserrat)</option><option value="font-['Bebas_Neue']">Tall Bold (Bebas Neue)</option><option value="font-['Oswald']">Athletic (Oswald)</option><option value="font-['Playfair_Display']">Elegant (Playfair)</option><option value="font-['Cinzel']">Luxury (Cinzel)</option><option value="font-['Caveat']">Handwriting (Caveat)</option>
+                                </optgroup>
+                            </select>
+                          </div>
+                          
+                          {mode === 'single' && (
+                            <>
+                              <div>
+                                <div className="flex justify-between mb-1"><label className="text-xs font-bold text-gray-500 uppercase">Article Size</label></div>
+                                <input type="range" min="2" max="8" step="0.1" value={products[0].textStyle?.articleSize ?? 4.5} onChange={(e) => updateTextStyle(products[0].id, 'articleSize', e.target.value)} className="w-full accent-teal-600" />
+                              </div>
+                              <div>
+                                <div className="flex justify-between mb-1"><label className="text-xs font-bold text-gray-500 uppercase">Details Size</label></div>
+                                <input type="range" min="1" max="4" step="0.1" value={products[0].textStyle?.detailsSize ?? 2} onChange={(e) => updateTextStyle(products[0].id, 'detailsSize', e.target.value)} className="w-full accent-teal-600" />
+                              </div>
+                            </>
+                          )}
+                       </div>
+                    </div>
+
+                    {/* MAIN CONTENT AREA */}
+                    <div className="flex-1 w-full max-w-full overflow-x-auto print:overflow-visible">
+                        {mode === 'single' ? (
+                          <div ref={containerRef} className="flex justify-center bg-gray-100 print:bg-transparent p-4 print:p-0 rounded-2xl print:rounded-none overflow-hidden shadow-inner print:shadow-none w-full min-h-[500px]">
+                            <div style={{ width: `${794 * posterScale}px`, height: `${1123 * posterScale}px` }} className="relative transition-all duration-300">
+                              <div style={{ transform: `scale(${posterScale})`, transformOrigin: 'top left' }} className="absolute top-0 left-0 transition-transform duration-300">
+                                <SinglePoster product={products[0]} updateProduct={updateProduct} config={config} />
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div id="printable-area" 
+                               className={`print:p-0 min-h-[1056px] border border-gray-200 print:border-none shadow-xl print:shadow-none p-10 rounded-sm bg-gradient-to-br ${config.fontFamily} ${!config.useCustomBg ? THEMES[config.themeId].bgClass : ''}`}
+                               style={config.useCustomBg ? { backgroundImage: `linear-gradient(to bottom right, ${config.bgStart}, ${config.bgEnd})` } : {}}
+                          >
+                            <div className={`flex justify-between items-end border-b-4 ${THEMES[config.themeId].bulkHeader} pb-6 mb-8 mt-2 transition-colors relative z-10`}>
+                              <IndusLogo theme={THEMES[config.themeId]} />
+                              <div className="text-right bg-white/90 backdrop-blur-sm px-6 py-4 rounded-2xl shadow-sm border border-white/50">
+                                <h2 className={`text-4xl font-black uppercase tracking-tight ${THEMES[config.themeId].bulkTitle || 'text-gray-900'}`}>{category}</h2>
+                                <p className="text-gray-500 mt-1 font-medium tracking-widest uppercase">Collection {new Date().getFullYear()}</p>
+                              </div>
+                            </div>
+
+                            <div className="relative mt-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-x-12 gap-y-12 relative z-10">
+                                  {products.map((product) => (
+                                    <div key={product.id} className="flex flex-col group print:break-inside-avoid relative bg-white/95 backdrop-blur-md p-6 rounded-3xl shadow-lg border border-white/50">
+                                        
+                                        <div className="absolute -top-6 left-0 right-0 border-t-2 border-gray-100 print:border-gray-200 w-full hidden group-[&:nth-child(n+3)]:block"></div>
+
+                                        <button 
+                                            onClick={() => setProducts(prev => prev.filter(p => p.id !== product.id))}
+                                            className="absolute -top-3 -right-3 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:bg-red-600 shadow-sm print:hidden"
+                                            title="Remove Article"
+                                        >
+                                            <X size={14} />
+                                        </button>
+
+                                        <div className="flex justify-between items-end border-b-2 border-teal-500/20 pb-2 mb-4">
+                                            <div className="flex-1 pr-4">
+                                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Article No.</div>
+                                                <input
+                                                    value={product.article}
+                                                    onChange={(e) => updateProduct(product.id, 'article', e.target.value)}
+                                                    className="font-black text-2xl text-gray-900 leading-none w-full bg-transparent border-none outline-none focus:bg-teal-50 rounded px-1 transition-colors"
+                                                    placeholder="ARTICLE NAME"
+                                                />
+                                            </div>
+                                            <div className="text-right w-1/3 border-l-2 border-teal-500/10 pl-4">
+                                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-0.5">SIZE</span>
+                                                <input
+                                                    value={product.size}
+                                                    onChange={(e) => updateProduct(product.id, 'size', e.target.value)}
+                                                    className="text-sm font-bold text-gray-700 w-full text-right bg-transparent border-none outline-none focus:bg-teal-50 rounded uppercase transition-colors"
+                                                    placeholder="Size"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 grid-rows-2 gap-4">
+                                            {product.images.map((img, i) => (
+                                                <div key={i} className="flex flex-col items-center group/slot">
+                                                    <div 
+                                                        onClick={() => triggerSlotUpload(product.id, i)}
+                                                        className={`w-full aspect-square relative rounded-xl border-2 flex flex-col items-center justify-center overflow-hidden cursor-pointer transition-all shadow-sm
+                                                            ${img.url ? 'bg-transparent border-transparent hover:border-teal-200' : 'bg-gray-50 border-dashed border-gray-300 hover:border-teal-400 hover:bg-teal-50'}`}
+                                                        title="Click to Upload Image"
+                                                    >
+                                                        
+                                                        {img.url && (
+                                                            <button 
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const newImages = [...product.images];
+                                                                    newImages[i] = { url: '', color: '' };
+                                                                    updateProduct(product.id, 'images', newImages);
+                                                                }}
+                                                                className="absolute top-1 right-1 bg-red-500/80 hover:bg-red-600 text-white p-1 rounded-full opacity-0 group-hover/slot:opacity-100 transition-opacity z-20 print:hidden"
+                                                            >
+                                                                <X size={10} />
+                                                            </button>
+                                                        )}
+
+                                                        {img.url ? (
+                                                            <img src={img.url} className="w-full h-full object-contain mix-blend-multiply drop-shadow-md p-1 group-hover/slot:scale-110 transition-transform duration-300" alt={`Color ${i}`} />
+                                                        ) : (
+                                                            <div className="flex flex-col items-center opacity-30 grayscale group-hover/slot:opacity-60 transition-opacity">
+                                                                <img src="image_58a43d.png" className="h-6 object-contain mb-1" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} />
+                                                                <span className="text-[8px] font-black tracking-widest text-gray-500 hidden">INDUS</span>
+                                                                <span className="text-[10px] font-medium text-gray-400 mt-1 print:hidden group-hover/slot:text-teal-600">+ Add</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <input 
+                                                        value={img.color}
+                                                        onChange={(e) => {
+                                                            const newImages = [...product.images];
+                                                            newImages[i].color = e.target.value;
+                                                            updateProduct(product.id, 'images', newImages);
+                                                        }}
+                                                        placeholder={img.url ? "COLOR NAME" : ""}
+                                                        className="w-full mt-2 text-center text-[10px] font-bold text-gray-600 uppercase tracking-wider bg-transparent outline-none focus:bg-teal-50 rounded py-0.5 transition-colors border border-transparent hover:border-gray-200 print:border-none"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                    </div>
+                                  ))}
+                                </div>
+                            </div>
+
+                            <div className="hidden print:block mt-20 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
+                              <p>INDUS FOOTWEAR • Premium Quality Products</p>
+                            </div>
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+          </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
