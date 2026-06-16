@@ -34,6 +34,11 @@
     @keyframes slideInBottom { from { transform: translateY(1rem); } to { transform: translateY(0); } }
     @keyframes slideInTop { from { transform: translateY(-0.5rem); } to { transform: translateY(0); } }
     @keyframes slideInTop4 { from { transform: translateY(-1rem); } to { transform: translateY(0); } }
+
+    .custom-scrollbar::-webkit-scrollbar { height: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #e5e7eb; border-radius: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6b7280; }
   </style>
 </head>
 <body>
@@ -121,7 +126,7 @@
     // --- SUB-COMPONENTS ---
     const IndusLogo = ({ theme = THEMES.street }) => (
       <div className="flex items-center gap-2 bg-white/95 backdrop-blur-sm p-3 rounded-2xl shadow-sm border border-white/50">
-        <img src="indus-logo.png" alt="Indus Logo" className="h-16 w-auto object-contain" />
+        <img src="image_58a43d.png" alt="Indus Logo" className="h-16 w-auto object-contain" />
       </div>
     );
 
@@ -200,7 +205,7 @@
 
           <div className={`absolute bottom-0 w-full h-[140px] z-50 flex items-center justify-center border-t-[6px] shadow-[0_-10px_30px_rgba(0,0,0,0.3)] ${t.footerClass}`}>
             <div className="bg-white/95 p-3 rounded-2xl shadow-xl border border-white/50">
-               <img src="indus-logo.png" alt="Indus Logo" className="h-[75px] w-auto max-w-[500px] object-contain drop-shadow-sm" />
+               <img src="image_58a43d.png" alt="Indus Logo" className="h-[75px] w-auto max-w-[500px] object-contain drop-shadow-sm" />
             </div>
           </div>
 
@@ -525,10 +530,9 @@
           const originalStyle = printElement.style.cssText;
           const originalClass = printElement.className;
           
-          if (mode === 'single') {
-             printElement.className = originalClass.replace(/scale-\[.*?\]/g, '').replace(/md:scale-\d+/g, '').replace(/origin-top/g, '');
-             printElement.style.cssText = "position: fixed !important; top: 0 !important; left: 0 !important; z-index: 9999 !important; transform: scale(1) !important; margin: 0 !important;";
-          }
+          // Apply to both single & bulk modes to prevent mobile scroll clipping
+          printElement.className = originalClass.replace(/scale-\[.*?\]/g, '').replace(/md:scale-\d+/g, '').replace(/origin-top/g, '');
+          printElement.style.cssText = "position: fixed !important; top: 0 !important; left: 0 !important; z-index: 9999 !important; transform: scale(1) !important; margin: 0 !important;";
 
           await new Promise(resolve => setTimeout(resolve, 50)); 
 
@@ -551,9 +555,8 @@
             }
           });
 
-          if (mode === 'single') {
-             printElement.className = originalClass; printElement.style.cssText = originalStyle;
-          }
+          printElement.className = originalClass; 
+          printElement.style.cssText = originalStyle;
 
           const imgData = canvas.toDataURL('image/jpeg', 0.95);
           const pdf = new window.jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -576,27 +579,29 @@
       return (
         <div className="min-h-screen bg-gray-50 print:bg-white text-gray-800 font-sans">
           
+          {/* Hidden slot file input for Template Builder */}
           <input type="file" accept="image/*" className="hidden" ref={slotFileInputRef} onChange={handleSlotFileChange} />
 
-          <nav className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center print:hidden sticky top-0 z-30">
+          <nav className="bg-white shadow-sm border-b px-4 sm:px-6 py-4 flex flex-wrap gap-4 justify-between items-center print:hidden sticky top-0 z-50">
             <div className="flex items-center gap-2">
               <FileText className="text-teal-600" size={24} />
-              <h1 className="text-xl font-bold text-gray-800">Catalogue Maker</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-gray-800">Catalogue Maker</h1>
             </div>
             
-            <div className="flex items-center gap-4 text-sm font-medium hidden md:flex">
-              <div className={`flex items-center gap-2 ${step >= 1 ? 'text-teal-600' : 'text-gray-400'}`}><div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 1 ? 'bg-teal-100' : 'bg-gray-100'}`}>1</div>Format</div>
-              <div className="w-8 h-px bg-gray-300"></div>
-              <div className={`flex items-center gap-2 ${step >= 2 ? 'text-teal-600' : 'text-gray-400'}`}><div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 2 ? 'bg-teal-100' : 'bg-gray-100'}`}>2</div>Upload</div>
-              <div className="w-8 h-px bg-gray-300"></div>
-              <div className={`flex items-center gap-2 ${step >= 3 ? 'text-teal-600' : 'text-gray-400'}`}><div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 3 ? 'bg-teal-100' : 'bg-gray-100'}`}>3</div>Preview</div>
+            <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm font-medium">
+              <div className={`flex items-center gap-1.5 sm:gap-2 ${step >= 1 ? 'text-teal-600' : 'text-gray-400'}`}><div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs ${step >= 1 ? 'bg-teal-100' : 'bg-gray-100'}`}>1</div><span className="hidden sm:inline">Format</span></div>
+              <div className="w-4 sm:w-8 h-px bg-gray-300"></div>
+              <div className={`flex items-center gap-1.5 sm:gap-2 ${step >= 2 ? 'text-teal-600' : 'text-gray-400'}`}><div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs ${step >= 2 ? 'bg-teal-100' : 'bg-gray-100'}`}>2</div><span className="hidden sm:inline">Upload</span></div>
+              <div className="w-4 sm:w-8 h-px bg-gray-300"></div>
+              <div className={`flex items-center gap-1.5 sm:gap-2 ${step >= 3 ? 'text-teal-600' : 'text-gray-400'}`}><div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs ${step >= 3 ? 'bg-teal-100' : 'bg-gray-100'}`}>3</div><span className="hidden sm:inline">Preview</span></div>
             </div>
           </nav>
 
-          <main className="max-w-6xl mx-auto p-6 print:p-0">
+          <main className="max-w-6xl mx-auto p-4 sm:p-6 print:p-0">
             
+            {/* STEP 1 */}
             {step === 1 && (
-              <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border p-8 mt-10">
+              <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border p-4 sm:p-8 mt-6 sm:mt-10">
                 <h2 className="text-2xl font-bold mb-6 text-gray-800">1. Choose Catalogue Format</h2>
                 <div className="grid md:grid-cols-2 gap-6 mb-10">
                   <div onClick={() => setMode('bulk')} className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${mode === 'bulk' ? 'border-teal-500 bg-teal-50' : 'border-gray-200 hover:border-teal-300'}`}>
@@ -668,6 +673,7 @@
               </div>
             )}
 
+            {/* STEP 2 */}
             {step === 2 && (
               <div className="mt-6">
                 <div className="flex items-center gap-4 mb-6">
@@ -677,10 +683,10 @@
                   </h2>
                 </div>
 
-                <div className="grid lg:grid-cols-3 gap-8">
+                <div className="grid lg:grid-cols-3 gap-6 sm:gap-8">
                   <div className="lg:col-span-1">
                     <div 
-                      className={`border-2 border-dashed rounded-2xl p-10 text-center flex flex-col items-center justify-center transition-all bg-white relative overflow-hidden ${isDragging ? 'border-teal-500 bg-teal-50' : 'border-gray-300 hover:border-gray-400'} ${isProcessing ? 'opacity-70 pointer-events-none' : ''}`}
+                      className={`border-2 border-dashed rounded-2xl p-6 sm:p-10 text-center flex flex-col items-center justify-center transition-all bg-white relative overflow-hidden ${isDragging ? 'border-teal-500 bg-teal-50' : 'border-gray-300 hover:border-gray-400'} ${isProcessing ? 'opacity-70 pointer-events-none' : ''}`}
                       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                       onDragLeave={() => setIsDragging(false)}
                       onDrop={(e) => { e.preventDefault(); setIsDragging(false); handleFiles(e.dataTransfer.files); }}
@@ -740,26 +746,28 @@
                         <p>No products established yet</p>
                       </div>
                     ) : (
-                      <div className={`grid gap-4 auto-rows-max h-[600px] overflow-y-auto pr-2 pb-4 grid-cols-1`}>
+                      <div className={`grid gap-4 auto-rows-max h-[400px] sm:h-[600px] overflow-y-auto pr-2 pb-4 grid-cols-1`}>
                         {products.map((product) => (
-                          <div key={product.id} className="border rounded-xl p-4 relative group hover:shadow-md transition-all flex gap-6 items-center bg-gray-50/50">
-                            <button onClick={() => updateProduct(product.id, 'delete_flag', true)} className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600 shadow-sm" onClickCapture={(e)=>{ e.stopPropagation(); setProducts(prev => prev.filter(p => p.id !== product.id)) }}>
+                          <div key={product.id} className="border rounded-xl p-4 relative group hover:shadow-md transition-all flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center bg-gray-50/50">
+                            <button onClick={() => updateProduct(product.id, 'delete_flag', true)} className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600 shadow-sm" onClickCapture={(e)=>{ e.stopPropagation(); setProducts(prev => prev.filter(p => p.id !== product.id)) }}>
                               <X size={14} />
                             </button>
                             
-                            <div className="flex-1">
-                                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Article No.</label>
-                                <input type="text" value={product.article} onChange={(e) => updateProduct(product.id, 'article', e.target.value)} className="w-full text-lg font-bold border-b border-gray-200 bg-transparent outline-none py-1" />
-                            </div>
-                            <div className="flex-1">
-                                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Size.</label>
-                                <input type="text" value={product.size} onChange={(e) => updateProduct(product.id, 'size', e.target.value)} className="w-full text-sm font-medium border-b border-gray-200 bg-transparent outline-none py-1" />
+                            <div className="flex w-full sm:w-auto sm:flex-1 gap-4">
+                              <div className="flex-1">
+                                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Article No.</label>
+                                  <input type="text" value={product.article} onChange={(e) => updateProduct(product.id, 'article', e.target.value)} className="w-full text-base sm:text-lg font-bold border-b border-gray-200 bg-transparent outline-none py-1" />
+                              </div>
+                              <div className="flex-1">
+                                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Size.</label>
+                                  <input type="text" value={product.size} onChange={(e) => updateProduct(product.id, 'size', e.target.value)} className="w-full text-xs sm:text-sm font-medium border-b border-gray-200 bg-transparent outline-none py-1" />
+                              </div>
                             </div>
                             
                             {mode === 'bulk' && (
-                                <div className="flex-1 flex gap-1">
+                                <div className="w-full sm:w-auto sm:flex-1 flex gap-1.5 flex-wrap">
                                     {product.images.map((img, i) => (
-                                        <div key={i} className="w-8 h-8 rounded border border-gray-300 bg-white flex items-center justify-center overflow-hidden">
+                                        <div key={i} className="w-8 h-8 sm:w-10 sm:h-10 rounded border border-gray-300 bg-white flex items-center justify-center overflow-hidden">
                                             {img.url ? <img src={img.url} className="w-full h-full object-contain" /> : <div className="w-2 h-2 rounded-full bg-gray-200"></div>}
                                         </div>
                                     ))}
@@ -774,44 +782,43 @@
               </div>
             )}
 
+            {/* STEP 3 - Template Builder & Print View */}
             {step === 3 && (
               <div className="pb-20 print:pb-0 relative">
                 
                 {showPrintHint && (
-                  <div className="print:hidden fixed top-6 right-6 bg-teal-900 text-white px-5 py-4 rounded-xl shadow-2xl z-50 animate-in fade-in slide-in-from-top-4 flex flex-col gap-1 border border-teal-700">
+                  <div className="print:hidden fixed top-6 right-6 bg-teal-900 text-white px-5 py-4 rounded-xl shadow-2xl z-[100] animate-in fade-in slide-in-from-top-4 flex flex-col gap-1 border border-teal-700">
                     <div className="flex items-center gap-4"><Loader2 size={20} className="animate-spin text-teal-400" /><span className="font-bold text-teal-100">Generating PDF...</span></div>
                     <p className="text-sm text-teal-200 mt-1 pl-9">Please wait while we render your high-resolution catalogue.</p>
                   </div>
                 )}
 
-                <div className="print:hidden flex justify-between items-center bg-gray-900 text-white p-4 rounded-2xl mb-8 shadow-lg sticky top-4 z-30">
-                  <div className="flex items-center gap-4">
-                    <button onClick={() => setStep(2)} disabled={isProcessing} className="flex items-center gap-2 hover:bg-gray-800 p-2 rounded-lg transition-colors disabled:opacity-50"><ArrowLeft size={18} /> Edit Uploads</button>
-                    <div className="w-px h-6 bg-gray-700"></div>
-                    <span className="text-sm text-gray-300 hidden sm:block">
-                      {mode === 'single' ? 'Single Poster Mode: Adjust settings below.' : 'Template Builder: Click on image frames to upload photos.'}
+                <div className="print:hidden flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-900 text-white p-3 sm:p-4 rounded-2xl mb-6 sm:mb-8 shadow-lg sticky top-2 sm:top-4 z-40">
+                  <div className="flex items-center justify-between w-full sm:w-auto gap-4">
+                    <button onClick={() => setStep(2)} disabled={isProcessing} className="flex items-center gap-2 hover:bg-gray-800 p-2 rounded-lg transition-colors disabled:opacity-50 text-sm font-medium"><ArrowLeft size={18} /> <span className="hidden sm:inline">Edit Uploads</span><span className="sm:hidden">Back</span></button>
+                    <div className="hidden sm:block w-px h-6 bg-gray-700"></div>
+                    <span className="text-xs sm:text-sm text-gray-300">
+                      {mode === 'single' ? 'Single Poster Mode' : 'Template Builder'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
                     {mode === 'bulk' && (
-                        <button onClick={addBlankArticle} className="bg-gray-800 border border-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 shadow-sm transition-colors text-sm">
-                          <PlusCircle size={16} /> Add Article
+                        <button onClick={addBlankArticle} className="flex-1 sm:flex-none justify-center bg-gray-800 border border-gray-600 hover:bg-gray-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-xl font-bold flex items-center gap-2 shadow-sm transition-colors text-xs sm:text-sm">
+                          <PlusCircle size={16} /> <span className="hidden sm:inline">Add Article</span><span className="sm:hidden">Add</span>
                         </button>
                     )}
-                    <button onClick={handlePrint} disabled={isProcessing} className="bg-teal-500 hover:bg-teal-400 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                      {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
-                      {isProcessing ? 'Processing...' : 'Download PDF'}
+                    <button onClick={handlePrint} disabled={isProcessing} className="flex-1 sm:flex-none justify-center bg-teal-500 hover:bg-teal-400 text-white px-3 py-2 sm:px-6 sm:py-2 rounded-xl font-bold flex items-center gap-2 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm">
+                      {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                      {isProcessing ? 'Processing...' : <><span className="hidden sm:inline">Download PDF</span><span className="sm:hidden">Save PDF</span></>}
                     </button>
                   </div>
                 </div>
 
-                {products.length > 0 && (
-                  <div className="flex flex-col lg:flex-row gap-8 justify-center items-start">
-                    
-                    {/* UNIFIED SIDEBAR */}
-                    <div className="print:hidden w-full lg:w-72 bg-white p-6 rounded-2xl shadow-sm border sticky top-28 z-30 shrink-0">
+                <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 justify-center items-start">
+                    {/* SIDEBAR FOR BOTH MODES */}
+                    <div className="print:hidden w-full lg:w-72 bg-white p-5 sm:p-6 rounded-2xl shadow-sm border relative lg:sticky lg:top-28 z-30 shrink-0">
                        
-                       {mode === 'single' && (
+                       {mode === 'single' && products.length > 0 && (
                          <>
                            <h3 className="font-bold text-gray-800 mb-5 flex items-center gap-2"><Move size={18} className="text-teal-600"/> Adjust Image Position</h3>
                            <div className="space-y-5">
@@ -871,7 +878,7 @@
                             </select>
                           </div>
                           
-                          {mode === 'single' && (
+                          {mode === 'single' && products.length > 0 && (
                             <>
                               <div>
                                 <div className="flex justify-between mb-1"><label className="text-xs font-bold text-gray-500 uppercase">Article Size</label></div>
@@ -886,132 +893,144 @@
                        </div>
                     </div>
 
-                    {/* MAIN CONTENT AREA */}
-                    <div className="flex-1 w-full max-w-full overflow-x-auto print:overflow-visible">
-                        {mode === 'single' ? (
-                          <div ref={containerRef} className="flex justify-center bg-gray-100 print:bg-transparent p-4 print:p-0 rounded-2xl print:rounded-none overflow-hidden shadow-inner print:shadow-none w-full min-h-[500px]">
-                            <div style={{ width: `${794 * posterScale}px`, height: `${1123 * posterScale}px` }} className="relative transition-all duration-300">
-                              <div style={{ transform: `scale(${posterScale})`, transformOrigin: 'top left' }} className="absolute top-0 left-0 transition-transform duration-300">
-                                <SinglePoster product={products[0]} updateProduct={updateProduct} config={config} />
+                    {/* CONTENT/PREVIEW AREA */}
+                    <div className="flex-1 w-full max-w-full overflow-x-auto print:overflow-visible custom-scrollbar">
+                        {mode === 'single' && products.length > 0 ? (
+                            <div ref={containerRef} className="flex justify-center bg-gray-100 print:bg-transparent p-2 sm:p-4 print:p-0 rounded-2xl print:rounded-none overflow-hidden shadow-inner print:shadow-none w-full min-h-[400px] sm:min-h-[500px]">
+                              <div style={{ width: `${794 * posterScale}px`, height: `${1123 * posterScale}px` }} className="relative transition-all duration-300">
+                                <div style={{ transform: `scale(${posterScale})`, transformOrigin: 'top left' }} className="absolute top-0 left-0 transition-transform duration-300">
+                                  <SinglePoster product={products[0]} updateProduct={updateProduct} config={config} />
+                                </div>
                               </div>
                             </div>
-                          </div>
                         ) : (
-                          <div id="printable-area" 
-                               className={`print:p-0 min-h-[1056px] border border-gray-200 print:border-none shadow-xl print:shadow-none p-10 rounded-sm bg-gradient-to-br ${config.fontFamily} ${!config.useCustomBg ? THEMES[config.themeId].bgClass : ''}`}
-                               style={config.useCustomBg ? { backgroundImage: `linear-gradient(to bottom right, ${config.bgStart}, ${config.bgEnd})` } : {}}
-                          >
-                            <div className={`flex justify-between items-end border-b-4 ${THEMES[config.themeId].bulkHeader} pb-6 mb-8 mt-2 transition-colors relative z-10`}>
-                              <IndusLogo theme={THEMES[config.themeId]} />
-                              <div className="text-right bg-white/90 backdrop-blur-sm px-6 py-4 rounded-2xl shadow-sm border border-white/50">
-                                <h2 className={`text-4xl font-black uppercase tracking-tight ${THEMES[config.themeId].bulkTitle || 'text-gray-900'}`}>{category}</h2>
-                                <p className="text-gray-500 mt-1 font-medium tracking-widest uppercase">Collection {new Date().getFullYear()}</p>
-                              </div>
-                            </div>
+                            <div className="w-full overflow-x-auto overflow-y-hidden bg-gray-200 p-2 sm:p-8 rounded-2xl print:p-0 print:bg-transparent print:overflow-visible custom-scrollbar">
+                              <div id="printable-area" 
+                                   className={`w-[794px] mx-auto bg-white print:bg-white print:p-0 min-h-[1056px] border border-gray-200 print:border-none shadow-2xl print:shadow-none p-10 rounded-sm bg-gradient-to-br ${config.fontFamily} ${!config.useCustomBg ? THEMES[config.themeId].bgClass : ''}`}
+                                   style={config.useCustomBg ? { backgroundImage: `linear-gradient(to bottom right, ${config.bgStart}, ${config.bgEnd})` } : {}}
+                              >
+                                <div className={`flex justify-between items-end border-b-4 ${THEMES[config.themeId].bulkHeader} pb-6 mb-8 mt-2 transition-colors relative z-10`}>
+                                  <IndusLogo theme={THEMES[config.themeId]} />
+                                  <div className="text-right bg-white/90 backdrop-blur-sm px-6 py-4 rounded-2xl shadow-sm border border-white/50">
+                                    <h2 className={`text-4xl font-black uppercase tracking-tight ${THEMES[config.themeId].bulkTitle || 'text-gray-900'}`}>{category}</h2>
+                                    <p className="text-gray-500 mt-1 font-medium tracking-widest uppercase">Collection {new Date().getFullYear()}</p>
+                                  </div>
+                                </div>
 
-                            <div className="relative mt-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-x-12 gap-y-12 relative z-10">
-                                  {products.map((product) => (
-                                    <div key={product.id} className="flex flex-col group print:break-inside-avoid relative bg-white/95 backdrop-blur-md p-6 rounded-3xl shadow-lg border border-white/50">
-                                        
-                                        <div className="absolute -top-6 left-0 right-0 border-t-2 border-gray-100 print:border-gray-200 w-full hidden group-[&:nth-child(n+3)]:block"></div>
+                                <div className="relative mt-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-x-12 gap-y-12 relative z-10">
+                                      {products.map((product) => (
+                                        <div key={product.id} className="flex flex-col group print:break-inside-avoid relative bg-white/95 backdrop-blur-md p-6 rounded-3xl shadow-lg border border-white/50">
+                                            <div className="absolute -top-6 left-0 right-0 border-t-2 border-gray-100 print:border-gray-200 w-full hidden group-[&:nth-child(n+3)]:block"></div>
 
-                                        <button 
-                                            onClick={() => setProducts(prev => prev.filter(p => p.id !== product.id))}
-                                            className="absolute -top-3 -right-3 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:bg-red-600 shadow-sm print:hidden"
-                                            title="Remove Article"
-                                        >
-                                            <X size={14} />
-                                        </button>
+                                            <button 
+                                                onClick={() => setProducts(prev => prev.filter(p => p.id !== product.id))}
+                                                className="absolute -top-3 -right-3 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:bg-red-600 shadow-sm print:hidden"
+                                                title="Remove Article"
+                                            >
+                                                <X size={14} />
+                                            </button>
 
-                                        <div className="flex justify-between items-end border-b-2 border-teal-500/20 pb-2 mb-4">
-                                            <div className="flex-1 pr-4">
-                                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Article No.</div>
-                                                <input
-                                                    value={product.article}
-                                                    onChange={(e) => updateProduct(product.id, 'article', e.target.value)}
-                                                    className="font-black text-2xl text-gray-900 leading-none w-full bg-transparent border-none outline-none focus:bg-teal-50 rounded px-1 transition-colors"
-                                                    placeholder="ARTICLE NAME"
-                                                />
-                                            </div>
-                                            <div className="text-right w-1/3 border-l-2 border-teal-500/10 pl-4">
-                                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-0.5">SIZE</span>
-                                                <input
-                                                    value={product.size}
-                                                    onChange={(e) => updateProduct(product.id, 'size', e.target.value)}
-                                                    className="text-sm font-bold text-gray-700 w-full text-right bg-transparent border-none outline-none focus:bg-teal-50 rounded uppercase transition-colors"
-                                                    placeholder="Size"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-3 grid-rows-2 gap-4">
-                                            {product.images.map((img, i) => (
-                                                <div key={i} className="flex flex-col items-center group/slot">
-                                                    <div 
-                                                        onClick={() => triggerSlotUpload(product.id, i)}
-                                                        className={`w-full aspect-square relative rounded-xl border-2 flex flex-col items-center justify-center overflow-hidden cursor-pointer transition-all shadow-sm
-                                                            ${img.url ? 'bg-transparent border-transparent hover:border-teal-200' : 'bg-gray-50 border-dashed border-gray-300 hover:border-teal-400 hover:bg-teal-50'}`}
-                                                        title="Click to Upload Image"
-                                                    >
-                                                        
-                                                        {img.url && (
-                                                            <button 
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    const newImages = [...product.images];
-                                                                    newImages[i] = { url: '', color: '' };
-                                                                    updateProduct(product.id, 'images', newImages);
-                                                                }}
-                                                                className="absolute top-1 right-1 bg-red-500/80 hover:bg-red-600 text-white p-1 rounded-full opacity-0 group-hover/slot:opacity-100 transition-opacity z-20 print:hidden"
-                                                            >
-                                                                <X size={10} />
-                                                            </button>
-                                                        )}
-
-                                                        {img.url ? (
-                                                            <img src={img.url} className="w-full h-full object-contain mix-blend-multiply drop-shadow-md p-1 group-hover/slot:scale-110 transition-transform duration-300" alt={`Color ${i}`} />
-                                                        ) : (
-                                                            <div className="flex flex-col items-center opacity-30 grayscale group-hover/slot:opacity-60 transition-opacity">
-                                                                <img src="image_58a43d.png" className="h-6 object-contain mb-1" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} />
-                                                                <span className="text-[8px] font-black tracking-widest text-gray-500 hidden">INDUS</span>
-                                                                <span className="text-[10px] font-medium text-gray-400 mt-1 print:hidden group-hover/slot:text-teal-600">+ Add</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <input 
-                                                        value={img.color}
-                                                        onChange={(e) => {
-                                                            const newImages = [...product.images];
-                                                            newImages[i].color = e.target.value;
-                                                            updateProduct(product.id, 'images', newImages);
-                                                        }}
-                                                        placeholder={img.url ? "COLOR NAME" : ""}
-                                                        className="w-full mt-2 text-center text-[10px] font-bold text-gray-600 uppercase tracking-wider bg-transparent outline-none focus:bg-teal-50 rounded py-0.5 transition-colors border border-transparent hover:border-gray-200 print:border-none"
+                                            <div className="flex justify-between items-end border-b-2 border-teal-500/20 pb-2 mb-4">
+                                                <div className="flex-1 pr-4">
+                                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Article No.</div>
+                                                    <input
+                                                        value={product.article}
+                                                        onChange={(e) => updateProduct(product.id, 'article', e.target.value)}
+                                                        className="font-black text-2xl text-gray-900 leading-none w-full bg-transparent border-none outline-none focus:bg-teal-50 rounded px-1 transition-colors"
+                                                        placeholder="ARTICLE NAME"
                                                     />
                                                 </div>
-                                            ))}
+                                                <div className="text-right w-1/3 border-l-2 border-teal-500/10 pl-4">
+                                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-0.5">SIZE</span>
+                                                    <input
+                                                        value={product.size}
+                                                        onChange={(e) => updateProduct(product.id, 'size', e.target.value)}
+                                                        className="text-sm font-bold text-gray-700 w-full text-right bg-transparent border-none outline-none focus:bg-teal-50 rounded uppercase transition-colors"
+                                                        placeholder="Size"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-3 grid-rows-2 gap-4">
+                                                {product.images.map((img, i) => (
+                                                    <div key={i} className="flex flex-col items-center group/slot">
+                                                        <div 
+                                                            onClick={() => triggerSlotUpload(product.id, i)}
+                                                            className={`w-full aspect-square relative rounded-xl border-2 flex flex-col items-center justify-center overflow-hidden cursor-pointer transition-all shadow-sm
+                                                                ${img.url ? 'bg-transparent border-transparent hover:border-teal-200' : 'bg-gray-50 border-dashed border-gray-300 hover:border-teal-400 hover:bg-teal-50'}`}
+                                                            title="Click to Upload Image"
+                                                        >
+                                                            {img.url && (
+                                                                <button 
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        const newImages = [...product.images];
+                                                                        newImages[i] = { url: '', color: '' };
+                                                                        updateProduct(product.id, 'images', newImages);
+                                                                    }}
+                                                                    className="absolute top-1 right-1 bg-red-500/80 hover:bg-red-600 text-white p-1 rounded-full opacity-0 group-hover/slot:opacity-100 transition-opacity z-20 print:hidden"
+                                                                >
+                                                                    <X size={10} />
+                                                                </button>
+                                                            )}
+
+                                                            {img.url ? (
+                                                                <img src={img.url} className="w-full h-full object-contain mix-blend-multiply drop-shadow-md p-1 group-hover/slot:scale-110 transition-transform duration-300" alt={`Color ${i}`} />
+                                                            ) : (
+                                                                <div className="flex flex-col items-center opacity-30 grayscale group-hover/slot:opacity-60 transition-opacity">
+                                                                    <img src="image_58a43d.png" className="h-6 object-contain mb-1" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} />
+                                                                    <span className="text-[8px] font-black tracking-widest text-gray-500 hidden">INDUS</span>
+                                                                    <span className="text-[10px] font-medium text-gray-400 mt-1 print:hidden group-hover/slot:text-teal-600">+ Add</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        <input 
+                                                            value={img.color}
+                                                            onChange={(e) => {
+                                                                const newImages = [...product.images];
+                                                                newImages[i].color = e.target.value;
+                                                                updateProduct(product.id, 'images', newImages);
+                                                            }}
+                                                            placeholder={img.url ? "COLOR NAME" : ""}
+                                                            className="w-full mt-2 text-center text-[10px] font-bold text-gray-600 uppercase tracking-wider bg-transparent outline-none focus:bg-teal-50 rounded py-0.5 transition-colors border border-transparent hover:border-gray-200 print:border-none"
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+
                                         </div>
-
+                                      ))}
                                     </div>
-                                  ))}
                                 </div>
+                                <div className="hidden print:block mt-20 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
+                                  <p>INDUS FOOTWEAR • Premium Quality Products</p>
+                                </div>
+                              </div>
                             </div>
-
-                            <div className="hidden print:block mt-20 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
-                              <p>INDUS FOOTWEAR • Premium Quality Products</p>
-                            </div>
-                          </div>
                         )}
                     </div>
-                  </div>
-                )}
+                </div>
               </div>
             )}
 
           </main>
-        </div>
+      
+      <style dangerouslySetInnerHTML={{__html: `
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@700&family=Cinzel:wght@700&family=Montserrat:wght@800&family=Oswald:wght@700&family=Playfair+Display:ital,wght@1,700&display=swap');
+        
+        .custom-scrollbar::-webkit-scrollbar { height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #e5e7eb; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+        @media print {
+          body { background-color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
+          @page { size: A4 portrait; margin: 0mm; }
+        }
+      `}} />
+    </div>
       );
     }
 
