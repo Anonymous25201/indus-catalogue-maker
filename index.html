@@ -155,9 +155,9 @@
             />
           </div>
 
-          {/* <div className="absolute right-[-450px] top-[40%] transform -rotate-90 origin-top-left z-40 w-[1000px] text-center">
+          <div className="absolute right-[-450px] top-[40%] transform -rotate-90 origin-top-left z-40 w-[1000px] text-center">
             <span className={`${t.labelClass} opacity-80 text-sm font-semibold tracking-widest`}>*MRP. is subject to change without any prior intimation. *MRP. mentioned is per pair.</span>
-          </div> */}
+          </div>
 
           <div className="absolute top-[15%] left-[0%] w-[100%] h-[60%] flex items-center justify-center z-30 pointer-events-none">
              <div
@@ -198,8 +198,8 @@
           </div>
 
           <div className="absolute bottom-[200px] right-20 z-40">
-            <div className={`${t.badgeClass} px-6 py-2 rounded-2xl shadow-xl transform border-[3px]`}>
-              <span className="text-3xl font-black tracking-widest drop-shadow-md">{t.badgeText}</span>
+            <div className={`${t.badgeClass} px-8 h-14 rounded-2xl shadow-xl border-[3px] flex items-center justify-center`}>
+              <span className="text-3xl font-black tracking-widest drop-shadow-md leading-none">{t.badgeText}</span>
             </div>
           </div>
 
@@ -548,7 +548,12 @@
                        div.textContent = input.value || input.placeholder;
                        div.className = input.className;
                        div.style.cssText = input.style.cssText;
-                       div.style.whiteSpace = 'nowrap'; div.style.overflow = 'visible'; div.style.lineHeight = '1.2'; div.style.paddingBottom = '10px';
+                       div.style.whiteSpace = 'nowrap'; 
+                       div.style.overflow = 'visible'; 
+                       div.style.display = 'flex';
+                       div.style.alignItems = 'center';
+                       if(input.className.includes('text-right')) div.style.justifyContent = 'flex-end';
+                       if(input.className.includes('text-center')) div.style.justifyContent = 'center';
                        input.parentNode.replaceChild(div, input);
                    });
                }
