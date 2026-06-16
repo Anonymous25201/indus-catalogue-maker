@@ -894,7 +894,7 @@
                     </div>
 
                     {/* CONTENT/PREVIEW AREA */}
-                    <div className="flex-1 w-full max-w-full overflow-x-auto print:overflow-visible custom-scrollbar">
+                    <div className="flex-1 min-w-0 w-full lg:w-auto overflow-x-auto print:overflow-visible custom-scrollbar">
                         {mode === 'single' && products.length > 0 ? (
                             <div ref={containerRef} className="flex justify-center bg-gray-100 print:bg-transparent p-2 sm:p-4 print:p-0 rounded-2xl print:rounded-none overflow-hidden shadow-inner print:shadow-none w-full min-h-[400px] sm:min-h-[500px]">
                               <div style={{ width: `${794 * posterScale}px`, height: `${1123 * posterScale}px` }} className="relative transition-all duration-300">
